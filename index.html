@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Magic Spider Modern</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: sans-serif;
+            touch-action: none;
+        }
+
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #spider {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            z-index: 5;
+            display: none;
+            pointer-events: none;
+            transition: transform 0.2s ease-out;
+            will-change: top, left, transform;
+        }
+
+        .ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            transition: opacity 0.5s;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .btn-magic {
+            background: linear-gradient(145deg, #ff0000, #8b0000);
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 4px 20px rgba(255,0,0,0.5);
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        @keyframes legWiggle {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(5deg); }
+        }
+        .leg {
+            transform-origin: center;
+            animation: legWiggle 0.1s infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="video-container">
+        <video id="webcam" autoplay playsinline></video>
+    </div>
+
+    <div id="spider">
+        <svg viewBox="0 0 100 100">
+            <g stroke="black" stroke-width="4" fill="none">
+                <path d="M35,30 Q10,10 5,40" class="leg" />
+                <path d="M35,45 Q10,35 5,60" class="leg" style="animation-delay: 0.05s" />
+                <path d="M35,60 Q10,70 5,85" class="leg" />
+                <path d="M65,30 Q90,10 95,40" class="leg" style="animation-delay: 0.05s" />
+                <path d="M65,45 Q90,35 95,60" class="leg" />
+                <path d="M65,60 Q90,70 95,85" class="leg" style="animation-delay: 0.05s" />
+            </g>
+            <ellipse cx="50" cy="55" rx="15" ry="20" fill="#111" />
+            <circle cx="50" cy="30" r="12" fill="black" />
+            <path d="M46,50 L54,50 L50,60 Z" fill="red" />
+        </svg>
+    </div>
+
+    <div id="start-screen" class="ui-layer">
+        <h1 class="text-3xl font-bold mb-4 text-center">SPIDER AR <br><span class="text-red-600 font-black">2.0</span></h1>
+        <p class="mb-8 text-center px-8 opacity-80">Posiciona la mano del espectador y activa el efecto.</p>
+        <button class="btn-magic" onclick="startMagic()">ACTIVAR CÁMARA</button>
+    </div>
+
+    <!-- Zonas sensibles invisibles para el mago -->
+    <div class="fixed top-0 left-0 w-full h-24 z-30 opacity-0" onclick="triggerSpider()"></div>
+    <div class="fixed bottom-0 left-0 w-full h-24 z-30 opacity-0" onclick="hideSpider()"></div>
+
+    <script>
+        const video = document.getElementById('webcam');
+        const spider = document.getElementById('spider');
+        const startScreen = document.getElementById('start-screen');
+        
+        let spiderActive = false;
+        let spiderX = 0;
+        let spiderY = 0;
+        let targetX = 0;
+        let targetY = 0;
+
+        async function startMagic() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }, 
+                    audio: false 
+                });
+                video.srcObject = stream;
+                startScreen.classList.add('hidden');
+                
+                // Pedir pantalla completa
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                }
+                
+                // Desbloquear vibración con un pulso inicial
+                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                
+            } catch (err) {
+                alert("Error: Para que el truco funcione, debes permitir el acceso a la cámara.");
+                console.error(err);
+            }
+        }
+
+        function triggerSpider() {
+            if(spiderActive) return;
+            
+            spiderActive = true;
+            spider.style.display = 'block';
+            
+            // Posición inicial: fuera de pantalla abajo
+            spiderX = window.innerWidth / 2 - 40;
+            spiderY = window.innerHeight + 100;
+            
+            // Destino inicial: centro de la pantalla
+            targetX = spiderX;
+            targetY = window.innerHeight / 2;
+            
+            updatePosition();
+        }
+
+        function hideSpider() {
+            spiderActive = false;
+            spider.style.display = 'none';
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        // Seguir el dedo o toque
+        const handleInteraction = (e) => {
+            if (!spiderActive) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            targetX = clientX - 40;
+            targetY = clientY - 40;
+        };
+
+        document.addEventListener('touchstart', handleInteraction);
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault(); // Evitar scroll
+            handleInteraction(e);
+        }, { passive: false });
+
+        function updatePosition() {
+            if (!spiderActive) return;
+
+            const dx = targetX - spiderX;
+            const dy = targetY - spiderY;
+            
+            // Si está lejos del objetivo, se mueve
+            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                spiderX += dx * 0.12; // Velocidad de seguimiento
+                spiderY += dy * 0.12;
+                
+                const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
+                
+                spider.style.left = spiderX + 'px';
+                spider.style.top = spiderY + 'px';
+                spider.style.transform = `rotate(${angle}deg)`;
+
+                // Vibración táctil aleatoria para simular pasos
+                if (Math.random() > 0.85 && navigator.vibrate) {
+                    navigator.vibrate(10);
+                }
+            }
+
+            if (spiderActive) {
+                requestAnimationFrame(updatePosition);
+            }
+        }
+
+        // Bloquear menús contextuales para que no se arruine el truco
+        window.oncontextmenu = (e) => {
+            e.preventDefault();
+            return false;
+        };
+    </script>
+</body>
+</html>
