@@ -36,15 +36,28 @@
             object-fit: cover;
         }
 
-        #spider {
+        /* Contenedor de la araña para manejar la sombra separada del cuerpo */
+        #spider-container {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             z-index: 5;
             display: none;
             pointer-events: none;
             transition: transform 0.2s ease-out;
             will-change: top, left, transform;
+        }
+
+        /* Sombra proyectada para realismo 3D */
+        .spider-shadow {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 70%);
+            filter: blur(5px);
+            z-index: 4;
         }
 
         .ui-layer {
@@ -78,13 +91,15 @@
             border: 2px solid white;
         }
 
+        /* Animación de patas más orgánica */
         @keyframes legWiggle {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(5deg); }
+            0%, 100% { transform: scaleY(1) translateX(0); }
+            50% { transform: scaleY(1.1) translateX(2px); }
         }
-        .leg {
+        
+        .leg-group {
             transform-origin: center;
-            animation: legWiggle 0.1s infinite;
+            animation: legWiggle 0.15s infinite;
         }
     </style>
 </head>
@@ -94,35 +109,61 @@
         <video id="webcam" autoplay playsinline></video>
     </div>
 
-    <div id="spider">
-        <svg viewBox="0 0 100 100">
-            <g stroke="black" stroke-width="4" fill="none">
-                <path d="M35,30 Q10,10 5,40" class="leg" />
-                <path d="M35,45 Q10,35 5,60" class="leg" style="animation-delay: 0.05s" />
-                <path d="M35,60 Q10,70 5,85" class="leg" />
-                <path d="M65,30 Q90,10 95,40" class="leg" style="animation-delay: 0.05s" />
-                <path d="M65,45 Q90,35 95,60" class="leg" />
-                <path d="M65,60 Q90,70 95,85" class="leg" style="animation-delay: 0.05s" />
+    <div id="spider-container">
+        <div class="spider-shadow"></div>
+        <svg viewBox="0 0 120 120" id="spider-svg">
+            <defs>
+                <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" style="stop-color:#333;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#050505;stop-opacity:1" />
+                </radialGradient>
+                <filter id="fuzz">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="3" result="noise" />
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+                </filter>
+            </defs>
+            
+            <!-- Patas Articuladas -->
+            <g stroke="#0a0a0a" stroke-width="4" fill="none" stroke-linecap="round" class="leg-group">
+                <!-- Izquierda -->
+                <path d="M50,50 L20,20 L10,40" />
+                <path d="M50,55 L15,45 L5,65" style="animation-delay: 0.05s"/>
+                <path d="M50,60 L15,75 L10,95" />
+                <path d="M50,65 L25,100 L35,115" style="animation-delay: 0.07s"/>
+                
+                <!-- Derecha -->
+                <path d="M70,50 L100,20 L110,40" />
+                <path d="M70,55 L105,45 L115,65" style="animation-delay: 0.03s"/>
+                <path d="M70,60 L105,75 L110,95" />
+                <path d="M70,65 L95,100 L85,115" style="animation-delay: 0.06s"/>
             </g>
-            <ellipse cx="50" cy="55" rx="15" ry="20" fill="#111" />
-            <circle cx="50" cy="30" r="12" fill="black" />
-            <path d="M46,50 L54,50 L50,60 Z" fill="red" />
+
+            <!-- Abdomen (Cuerpo trasero) -->
+            <ellipse cx="60" cy="75" rx="18" ry="25" fill="url(#bodyGrad)" filter="url(#fuzz)" />
+            
+            <!-- Cefalotórax (Cabeza/Cuerpo delantero) -->
+            <circle cx="60" cy="45" r="14" fill="#000" filter="url(#fuzz)" />
+            
+            <!-- Marca Reloj de Arena (Viuda Negra Realista) -->
+            <path d="M54,65 L66,65 L60,75 L66,85 L54,85 L60,75 Z" fill="#b30000" style="opacity: 0.9" />
+            
+            <!-- Brillo en el cuerpo -->
+            <ellipse cx="55" cy="40" rx="3" ry="5" fill="white" fill-opacity="0.2" />
         </svg>
     </div>
 
     <div id="start-screen" class="ui-layer">
-        <h1 class="text-3xl font-bold mb-4 text-center">SPIDER AR <br><span class="text-red-600 font-black">2.0</span></h1>
-        <p class="mb-8 text-center px-8 opacity-80">Posiciona la mano del espectador y activa el efecto.</p>
+        <h1 class="text-3xl font-bold mb-4 text-center">SPIDER AR <br><span class="text-red-600 font-black">PRO</span></h1>
+        <p class="mb-8 text-center px-8 opacity-80">Efecto visual de alta fidelidad para magia de cerca.</p>
         <button class="btn-magic" onclick="startMagic()">ACTIVAR CÁMARA</button>
     </div>
 
-    <!-- Zonas sensibles invisibles para el mago -->
     <div class="fixed top-0 left-0 w-full h-24 z-30 opacity-0" onclick="triggerSpider()"></div>
     <div class="fixed bottom-0 left-0 w-full h-24 z-30 opacity-0" onclick="hideSpider()"></div>
 
     <script>
         const video = document.getElementById('webcam');
-        const spider = document.getElementById('spider');
+        const spider = document.getElementById('spider-container');
         const startScreen = document.getElementById('start-screen');
         
         let spiderActive = false;
@@ -136,39 +177,32 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
                         facingMode: "environment",
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
                     }, 
                     audio: false 
                 });
                 video.srcObject = stream;
                 startScreen.classList.add('hidden');
                 
-                // Pedir pantalla completa
                 if (document.documentElement.requestFullscreen) {
                     document.documentElement.requestFullscreen();
                 }
                 
-                // Desbloquear vibración con un pulso inicial
-                if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+                if (navigator.vibrate) navigator.vibrate([10, 30]);
                 
             } catch (err) {
-                alert("Error: Para que el truco funcione, debes permitir el acceso a la cámara.");
-                console.error(err);
+                alert("Permite el acceso a la cámara.");
             }
         }
 
         function triggerSpider() {
             if(spiderActive) return;
-            
             spiderActive = true;
             spider.style.display = 'block';
             
-            // Posición inicial: fuera de pantalla abajo
-            spiderX = window.innerWidth / 2 - 40;
-            spiderY = window.innerHeight + 100;
-            
-            // Destino inicial: centro de la pantalla
+            spiderX = window.innerWidth / 2 - 50;
+            spiderY = window.innerHeight + 120;
             targetX = spiderX;
             targetY = window.innerHeight / 2;
             
@@ -178,22 +212,20 @@
         function hideSpider() {
             spiderActive = false;
             spider.style.display = 'none';
-            if (navigator.vibrate) navigator.vibrate(50);
+            if (navigator.vibrate) navigator.vibrate(40);
         }
 
-        // Seguir el dedo o toque
         const handleInteraction = (e) => {
             if (!spiderActive) return;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            
-            targetX = clientX - 40;
-            targetY = clientY - 40;
+            targetX = clientX - 50;
+            targetY = clientY - 50;
         };
 
         document.addEventListener('touchstart', handleInteraction);
         document.addEventListener('touchmove', (e) => {
-            e.preventDefault(); // Evitar scroll
+            e.preventDefault();
             handleInteraction(e);
         }, { passive: false });
 
@@ -203,10 +235,9 @@
             const dx = targetX - spiderX;
             const dy = targetY - spiderY;
             
-            // Si está lejos del objetivo, se mueve
-            if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-                spiderX += dx * 0.12; // Velocidad de seguimiento
-                spiderY += dy * 0.12;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                spiderX += dx * 0.15;
+                spiderY += dy * 0.15;
                 
                 const angle = Math.atan2(dy, dx) * (180 / Math.PI) + 90;
                 
@@ -214,9 +245,8 @@
                 spider.style.top = spiderY + 'px';
                 spider.style.transform = `rotate(${angle}deg)`;
 
-                // Vibración táctil aleatoria para simular pasos
-                if (Math.random() > 0.85 && navigator.vibrate) {
-                    navigator.vibrate(10);
+                if (Math.random() > 0.8 && navigator.vibrate) {
+                    navigator.vibrate(12);
                 }
             }
 
@@ -225,11 +255,7 @@
             }
         }
 
-        // Bloquear menús contextuales para que no se arruine el truco
-        window.oncontextmenu = (e) => {
-            e.preventDefault();
-            return false;
-        };
+        window.oncontextmenu = (e) => { e.preventDefault(); return false; };
     </script>
 </body>
 </html>
